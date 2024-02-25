@@ -133,7 +133,6 @@ void Robot::RobotInit()
     nt::NetworkTableInstance::GetDefault().GetTable("limelight")->PutNumber("ledMode", 1);
 
     frc::SmartDashboard::PutNumber("delay", 0);
-    frc::SmartDashboard::PutNumber("fw_sp1", 0.2);
     frc::SmartDashboard::PutNumber("auto", 1);
 
     //distanceSensor.SetUpSource(9);
@@ -227,11 +226,11 @@ void Robot::AutonomousPeriodic(){
       tiltValue = frc::DoubleSolenoid::kReverse;
     }
       
-    if (y == 0.0)
-  {
+  //  if (y == 0.0)
+  //{
       // set sign for pure rotations
       // z *= rotation;
-  }
+  //}
 
   if(limeLight_drive){
     if(blueAlliance){
@@ -290,6 +289,8 @@ void Robot::TeleopPeriodic()
     double y = m_joystick_driver.GetLeftY();
     double z = m_joystick_driver.GetRightX();
 
+    int color[3]{255,0,0};  //Red
+    
     if(1){
       scale(y, 0.15, 0.0, .7); // Set th deadband, lower limit and upper limit on drive
       scale(z, 0.15, 0.0, .20);	// and on steer
@@ -306,10 +307,10 @@ void Robot::TeleopPeriodic()
     }
     else if(m_joystick_operator.GetRawButton(1)){ //Green Button
       tiltCylinder = frc::DoubleSolenoid::kForward;
-      for(int i = 0; i<22; i++){
-        m_ledBuffer[i].SetHSV(60,255,100);
-      }
-      m_ledStrip.SetData(m_ledBuffer);
+      color[0] = 0;  //Green
+      color[1] = 255;
+      color[2] = 0;
+
     }
     else if(m_joystick_operator.GetRawButton(4)){
       tiltCylinder = frc::DoubleSolenoid::kForward;
@@ -318,14 +319,13 @@ void Robot::TeleopPeriodic()
     else{
       tiltCylinder = frc::DoubleSolenoid::kReverse;
       bucketCylinder = frc::DoubleSolenoid::kReverse;
-      for(int i = 0; i<22; i++){
-        m_ledBuffer[i].SetHSV(1,255,100);
-      }
-      m_ledStrip.SetData(m_ledBuffer);
     }
 
     if (m_joystick_operator.GetLeftTriggerAxis() > 0.7 && m_joystick_operator.GetRawButton(3)){   // button
       hookCylinder = frc::DoubleSolenoid::kForward;
+      color[0] = 0;  //Blue
+      color[1] = 0;
+      color[2] = 255;
     }
     else{
       hookCylinder = frc::DoubleSolenoid::kReverse;
@@ -347,35 +347,45 @@ void Robot::TeleopPeriodic()
 
     if (m_joystick_driver.GetRawButton(1)){   //green button for AMP
       if(blueAlliance){
-        z = limeLightSteer(z, 0); //use pipeline 1 ID6
+        z = limeLightSteer(z, 6); //use pipeline 6 ID6
       }
       else{
-        z = limeLightSteer(z, 0); //use pipeline 2  ID5
+        z = limeLightSteer(z, 5); //use pipeline 5  ID5
       }
     }
 
     else if (m_joystick_driver.GetRawButton(2)){   //red button SOURCE right sides
       if(blueAlliance){
-        z = limeLightSteer(z, 1); //use pipeline 2  ID1
+        z = limeLightSteer(z, 1); //use pipeline 1  ID1
       }
       else{
-        z = limeLightSteer(z, 2); //use pipeline 3  ID9
+        z = limeLightSteer(z, 9); //use pipeline 9  ID9
       }
     }
 
-    else if (m_joystick_driver.GetRawButton(4)){   //blue button SOURCE left sides
+    else if (m_joystick_driver.GetRawButton(4)){   //yellow button SOURCE middle
       if(blueAlliance){
-        z = limeLightSteer(z, 3); //use pipeline 4  ID2
+        z = limeLightSteer(z, 3); //use pipeline 3  ID1 & ID2
       }
       else{
-        z = limeLightSteer(z, 4); //use pipeline 5  ID10
+        z = limeLightSteer(z, 4); //use pipeline 4  ID9 & ID10
+      }
+    }
+
+    else if (m_joystick_driver.GetRawButton(3)){   //blue button SOURCE left sides
+      if(blueAlliance){
+        z = limeLightSteer(z, 2); //use pipeline 2  ID2
+      }
+      else{
+        z = limeLightSteer(z, 0); //use pipeline 0  ID10
       }
     }
 
     else{
-      nt::NetworkTableInstance::GetDefault().GetTable("limelight")->PutNumber("ledMode", 0);
+      nt::NetworkTableInstance::GetDefault().GetTable("limelight")->PutNumber("ledMode", 1);
     }
 
+    set_leds(color[0], color[1], color[2]);  
     m_bucketSolenoid.Set(bucketCylinder);
     m_hookSolenoid.Set(hookCylinder);
     m_tiltSolenoid.Set(tiltCylinder);
@@ -401,18 +411,12 @@ void Robot::DisabledInit()
   //m_drive_lf.SetIdleMode(rev::CANSparkMax::IdleMode::kCoast);
 }
 
-void Robot::DisabledPeriodic() {}
+void Robot::DisabledPeriodic(){}
+void Robot::TestInit(){}
+void Robot::TestPeriodic(){}
 
-void Robot::TestInit()
-{
-  nt::NetworkTableInstance::GetDefault().GetTable("limelight")->PutNumber("ledMode", 0);
-}
-void Robot::TestPeriodic() {}
-
-void Robot::set_leds(int r, int g, int b)
-{
-    for(unsigned int i = 0; i < m_ledBuffer.size(); i++)
-    {
+void Robot::set_leds(int r, int g, int b){
+    for(unsigned int i = 0; i < m_ledBuffer.size(); i++){
       m_ledBuffer[i].SetRGB(r, g, b);
     }
     m_ledStrip.SetData(m_ledBuffer);
@@ -501,7 +505,7 @@ void Robot::update_move()
 
 
 double Robot::limeLightSteer(double steering_adjust, int pipeVal){
-  nt::NetworkTableInstance::GetDefault().GetTable("limelight")->PutNumber("ledMode", 3);
+  nt::NetworkTableInstance::GetDefault().GetTable("limelight")->PutNumber("ledMode", 1);
 	nt::NetworkTableInstance::GetDefault().GetTable("limelight")->PutNumber("pipeline", pipeVal);
   double Kp = 0.05;  //turn down if oscillating 0.01
   double min_command = 0.03;

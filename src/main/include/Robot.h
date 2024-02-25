@@ -44,6 +44,7 @@ typedef struct
 
 } move_step_t;
 
+
 class Robot : public frc::TimedRobot {
  public:
   void RobotInit() override;
@@ -114,7 +115,7 @@ class Robot : public frc::TimedRobot {
 
   frc::Counter distanceSensor{frc::Counter::Mode::kSemiperiod};
 
-  static constexpr int kLength = 22; //how many LEDs in the strip
+  static constexpr int kLength = 9; //how many LEDs in the strip
   frc::AddressableLED m_ledStrip{9}; //PWM port
   std::array<frc::AddressableLED::LEDData, kLength> m_ledBuffer; 
 
