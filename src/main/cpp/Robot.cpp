@@ -105,6 +105,38 @@ static void scale(double &value, const double deadband, const double ll, const d
 }
 #endif
 
+static void scaleSteer(double &value, double &drive_value, const double deadband, const double ll, const double ul)
+{
+  double drive_temp = drive_value;  //don't mess with the drive value
+	bool positive = (value >= 0.0);  //check steer value positve
+	if (!positive){
+		value *= -1;
+	}
+	bool positive_drive = (drive_temp >= 0.0); //check drive value is positive
+	if (!positive_drive){
+		drive_temp *= -1;   //make it positive
+	}
+	if (value > deadband){
+		value -= deadband;
+	}
+	else{
+		value = 0;
+	}
+	value *= ((ul - ll) / (1.0 - deadband));
+	value += ll;
+	if(value > 0){  //output of the original scale is positive
+		if(value - (ul * drive_temp / 2.1) > 0){  //if 0 or negative, just use the original scale
+			value -= (ul*drive_temp / 2.1);   //subtract from the steer speed half of steer UL*drive speed
+		}
+	}
+	else{
+		value = 0;
+	}
+	if (!positive){
+		value *= -1;  //switch it back to positive if it was negative
+	}
+}
+
 
 
 void Robot::RobotInit()
@@ -292,8 +324,9 @@ void Robot::TeleopPeriodic()
     int color[3]{255,0,0};  //Red
     
     if(1){
-      scale(y, 0.15, 0.0, .7); // Set th deadband, lower limit and upper limit on drive
-      scale(z, 0.15, 0.0, .20);	// and on steer
+      scale(y, 0.12, 0.0, .9); // Set th deadband, lower limit and upper limit on drive
+      //scale(z, 0.15, 0.0, .20);	// and on steer
+      scaleSteer(z, y, 0.12, 0.0, .25);	// and on steer
     }
     else{ //no carpet
       scale(y, 0.15, 0.0, .4); // Set th deadband, lower limit and upper limit on drive
@@ -542,7 +575,6 @@ double Robot::IMUturn(double targetHeading){
 
    printf("%d: z=%5.2f, actualHeading=%5.2f, targetHeading=%5.2f, turnVal=%5.2f\n", mv.steps[step].z, actualHeading, targetHeading, turnVal);
 
-  //scale(turnVal, 0.03, 0.0, .20);  //scale the steering differently when using the IMU
   clamp(turnVal, 0.2, -0.2);
   return turnVal;
 }
